@@ -49,6 +49,21 @@ def send_telegram_message(chat_id, text):
     except requests.exceptions.RequestException as e:
         print(f"Error sending message: {e}")
 
+def is_current_week(published_parsed):
+    """Check if a published date falls within the current week."""
+    if not published_parsed:
+        return False
+    # Convert the struct_time to a datetime object
+    published_date = datetime.datetime(*published_parsed[:6])
+    # Get the current date
+    today = datetime.date.today()
+    # Get the start of the current week (Monday)
+    start_of_week = today - datetime.timedelta(days=today.weekday())
+    # Get the end of the current week (Sunday)
+    end_of_week = start_of_week + datetime.timedelta(days=6)
+    # Check if the published date is within the current week
+    return start_of_week <= published_date.date() <= end_of_week
+
 def check_feeds():
     """Checks all configured RSS feeds for new posts."""
     sent_items = load_sent_items()
@@ -74,6 +89,10 @@ def check_feeds():
                     link = entry.get('link')
                     print(f"New post found: {title}")
                     
+                    published_pared = entry.get('published_parsed')
+                    if published_parsed and not is_current_week(published_parsed):
+                        continue
+
                     if link:
                         message = f"<b>{title}</b>\n<a href='{link}'>Read more</a>"
                     else:
